@@ -1,0 +1,463 @@
+# Some modules imported before the questions:
+
+import pandas as pd
+import os
+import numpy as np
+from pandas.api.types import CategoricalDtype
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from scipy import stats
+
+# Q1: Which agent made the most calls?
+
+# A1: 
+os.chdir('set the file path to the data set files')
+calls_data = pd.read_csv('calls.csv')
+
+# We can have a quick look at the data
+calls_data.sort_values('Phone Number').head(20)
+'''
+	Phone Number	Call Outcome	Agent	Call Number
+4934	86974920	CALL BACK LATER	red	4934
+3398	293076903	NOT INTERESTED	orange	3398
+2443	296668016	CALL BACK LATER	red	2443
+2543	296668016	INTERESTED	black	2543
+2343	296668016	CALL BACK LATER	orange	2343
+4053	330347320	INTERESTED	orange	4053
+3953	330347320	CALL BACK LATER	red	3953
+1473	457146043	INTERESTED	orange	1473
+1373	457146043	CALL BACK LATER	red	1373
+4545	832669152	NOT INTERESTED	red	4545
+4445	832669152	CALL BACK LATER	orange	4445
+3191	913330936	NOT INTERESTED	red	3191
+1441	1068208068	ANSWER MACHINE	orange	1441
+1541	1068208068	NOT INTERESTED	orange	1541
+197	1317965432	INTERESTED	orange	197
+572	1491024555	NOT INTERESTED	red	572
+372	1491024555	CALL BACK LATER	orange	372
+472	1491024555	CALL BACK LATER	orange	472
+11	1590010071	INTERESTED	green	11
+1971	1990092541	CALL BACK LATER	red	1971
+'''
+
+calls_data.groupby('Agent')['Agent'].count().sort_values(ascending = False)
+
+orange    2234
+red       1478
+black      750
+green      339
+blue       199
+
+# We can see that Agent orange makes most calls
+
+
+
+
+
+
+
+# Q2: For the leads that received one or more calls, how many calls were received on average?
+
+# A2: There are two ways to calculate it. We can use the calls_data exclusively or we can merge the calls_data with leads_data then do the calculation.
+
+# 1st method
+calls_data.groupby('Phone Number')['Phone Number'].count().mean()
+
+# answer is 1.839587932303164
+
+# 2nd method
+leads_data = pd.read_csv('leads.csv')
+leads_calls_left = pd.merge(leads_data, calls_data, how = 'left', on = 'Phone Number')
+
+leads_calls_left[leads_calls_left['Call Outcome'].notnull()].groupby('Name')['Name'].count().mean()
+
+# answer is 1.839587932303164
+
+
+
+
+
+
+# Q3: For the leads that signed up, how many calls were received, on average?
+
+# A3: we can inner merge all three data sets and then calculate the average calls for the signed up leads.
+
+temp_data = pd.merge(calls_data, leads_data, on = 'Phone Number')
+signups_data = pd.read_csv(notebook_path + '\\signups.csv')
+signups_leads_calls = pd.merge(temp_data, signups_data, left_on='Name', right_on='Lead')
+signups_leads_calls.groupby('Lead')['Lead'].count().mean()
+
+# answer is 2.0989583333333335
+
+
+
+
+
+
+
+# Q4: Which agent had the most signups? Which assumptions did you make? (note that there is a many-to-one relationship between calls and leads) 
+
+# A4: We can filter by 'INTERESTED' in order to only keep the last call per lead that make the lead sign up.
+
+signups_leads_calls.head(10)
+
+'''
+Phone Number	Call Outcome	Agent	Call Number	Name	Region	Sector	Age	Lead	Approval Decision
+0	906739234066	CALL BACK LATER	orange	4	Lisette NICHOLSON	south-west	food	25	Lisette NICHOLSON	REJECTED
+1	906739234066	INTERESTED	orange	104	Lisette NICHOLSON	south-west	food	25	Lisette NICHOLSON	REJECTED
+2	568031927923	INTERESTED	blue	10	Tyree TERRY	north-west	food	32	Tyree TERRY	APPROVED
+3	1590010071	INTERESTED	green	11	Ansel WOOD	scotland	entertainment	51	Ansel WOOD	REJECTED
+4	549140541574	INTERESTED	red	15	Ludwig DIAZ	north-west	retail	30	Ludwig DIAZ	APPROVED
+5	98460537672	INTERESTED	red	22	Mack ARELLANO	north-west	retail	18	Mack ARELLANO	APPROVED
+6	302316576144	INTERESTED	black	24	Judy HENDRICKS	scotland	food	33	Judy HENDRICKS	REJECTED
+7	976542693663	CALL BACK LATER	red	26	Lashawn DURHAM	scotland	retail	49	Lashawn DURHAM	REJECTED
+8	976542693663	INTERESTED	orange	126	Lashawn DURHAM	scotland	retail	49	Lashawn DURHAM	REJECTED
+9	770169781152	ANSWER MACHINE	orange	27	Rose HOFFMAN	north-west	food	19	Rose HOFFMAN	REJECTED
+'''
+# We can see that leads_data contains many leads who haven't been called yet, i.e. non-null 'Name' is lengthy than non-null 'Call Outcome'; and also we can check whether calls per lead always end up with Call Outcome equals INTERESTED (Note I only do inner merge so there is no 'NOT INTERESTED' here yet).
+
+temp = signups_leads_calls.groupby('Name').last()
+temp[temp['Call Outcome'] != 'INTERESTED'].shape
+
+# the result is (0, 9) which indicates that all Call Outcome = INTERESTED
+
+# We also can check whether calls per lead have several 'Call Outcome' as 'INTERESTED'.
+temp1 = calls_data[calls_data['Call Outcome'] == 'INTERESTED'].groupby(['Phone Number']).count()
+temp1[temp1['Call Outcome'] > 1].shape
+
+# the result is (0, 3) which indicates that each lead only has one Call Outcome = INTERESTED if there is any.
+
+temp.groupby('Agent')['Agent'].count().sort_values(ascending = False)
+
+# Answer is 
+
+'''
+red       316
+orange    284
+green      67
+blue       52
+black      49
+'''
+'''
+It is interesting to see that although Agent Orange made most calls, Agent red got most of the signups.
+
+The first assumption is the sample is a good reflection of the population. Second, all agents called same type of leads or they call the leads randomly. This is an over-restrictive assumption. For example, the reason why Agent red got more sign ups is because he is just lucky to call leads who are more likely to sign up based on their characteristic variables (Region, Sector, Age).
+'''
+
+# Also note that there are cases when leads are interested but didn't sign up.
+signups_leads_calls_all = pd.merge(leads_calls_left, signups_data, how = 'left', left_on = 'Name', right_on = 'Lead')
+signups_leads_calls_all[signups_leads_calls_all['Call Outcome'] == 'INTERESTED'].head(10)
+'''
+	Name			Phone Number	Region		Sector		Age	Call Outcome	Agent	Call Number	Lead		Approval Decision
+3	Deangelo LEE		937521423043	north-west	retail		38	INTERESTED	orange	2413.0		Deangelo LEE	APPROVED
+12	Lu JACOBSON		477236163516	north-west	consultancy	28	INTERESTED	orange	2149.0		Lu JACOBSON	REJECTED
+16	Theron WELCH		533788208390	north-east	entertainment	36	INTERESTED	green	1207.0		Theron WELCH	APPROVED
+19	Lilia OCHOA		80967872849	north-west	wholesale	33	INTERESTED	black	1333.0		NaN		NaN
+31	Cheryle CALDWELL	484404817049	north-west	consultancy	27	INTERESTED	orange	473.0		NaN		NaN
+36	Naoma DURHAM		940509676942	south-east	entertainment	30	INTERESTED	black	2013.0		Naoma DURHAM	REJECTED
+56	Alyssa HAMPTON		593981680906	north-east	consultancy	27	INTERESTED	orange	2292.0		Alyssa HAMPTON	REJECTED
+72	Glen PATTON		532155164354	midlands	food		20	INTERESTED	red	2400.0		Glen PATTON	APPROVED
+88	Christena KRAMER	379624957194	scotland	food		32	INTERESTED	orange	4067.0		NaN		NaN
+101	Bonnie CALLAHAN		350965802992	scotland	food		27	INTERESTED	red	1753.0		Bonnie CALLAHAN	APPROVED
+'''
+# the above table shows that although these leads are all interested, several of them didn't sign up. (Approval Decision = NaN)
+
+
+
+
+
+
+# Q5: Which agent had the most signups per call?
+
+# A5: There are two alternative understandings to this question. 
+# 1st understanding: including all calls each agent made.
+calls_per_agent = calls_data.groupby('Agent')['Agent'].count().sort_index()
+signups_per_agent = signups_leads_calls.groupby('Lead').last().groupby('Agent')['Agent'].count().sort_index()
+signups_rate = (signups_per_agent/calls_per_agent).sort_values(ascending = False)
+signups_rate
+
+# the result is 
+'''
+blue      0.261307
+red       0.213802
+green     0.197640
+orange    0.127126
+black     0.065333
+'''
+# Agent blue has the highest signups per call.
+# 2nd understanding:  just include those final actual conversational calls (neither a deadline nor answer machine) each agent made.
+
+actual_calls_per_agent = calls_data[(calls_data['Call Outcome'] != 'DEADLINE') & (calls_data['Call Outcome'] != 'ANSWER MACHINE')].groupby('Agent')['Agent'].count()
+actual_signups_rate = (signups_per_agent/actual_calls_per_agent).sort_values(ascending = False)
+actual_signups_rate
+# the result is 
+'''
+blue      0.290503
+red       0.238491
+green     0.219672
+orange    0.140873
+black     0.074130
+'''
+# the rank didn't change. Agent blue still has the highest signups per call.
+
+
+
+
+
+
+# Q6: Was the variation between the agents' signups-per-call statistically significant? why?
+
+# A6: chi-square test can be used to test whether signups per call is uniformly distributed. Firstly we need to create a contingency table.
+
+test_data = pd.concat([signups_per_agent, calls_per_agent], axis = 1)
+test_data.columns = ['signups count', 'calls count']
+test_data
+
+signups count	calls count
+		
+black	49	750
+blue	52	199
+green	67	339
+orange	284	2234
+red	316	1478
+
+# Using our bare eye we can see that the ratio of signups against non-signups count is disproportioinal. We can prove this by running chi-square test.
+
+chi2, p, dof, expected = stats.chi2_contingency([i for i in np.array(test_data)])
+chi2, p
+
+# The result is (88.97471726636842, 2.1740841509211066e-18). A trivial p-value indicates that the ratio is statistically different from each other.
+
+# If we were to test based on our second understanding
+
+test_data = pd.concat([signups_per_agent, actual_calls_per_agent], axis = 1)
+test_data.columns = ['signups count', 'actual calls count']
+chi2, p, dof, expected = stats.chi2_contingency([i for i in np.array(test_data)])
+chi2, p
+
+# The result is (86.62269161071926, 6.8649353770441634e-18). A trivial p-value indicates that the ratio is statistically different from each other.
+
+
+
+
+
+
+# Q7: A lead from which region is most likely to be \A1\B0interested\A1\B1 in the product?
+
+# A7: we can inner merge calls_data with leads_data and then analyse.
+
+leads_calls_inner = pd.merge(calls_data, leads_data, how = 'inner', on = 'Phone Number')
+leadsOrderByRegion = leads_calls_inner[leads_calls_inner['Call Outcome'] == 'INTERESTED'].groupby('Region')['Region'].count().sort_values(ascending = False)
+leadsOrderByRegion
+
+'''
+north-west          365
+south-west          161
+midlands            150
+north-east          139
+scotland            137
+south-east          136
+south                62
+london               56
+wales                50
+northern-ireland     40
+'''
+# The result shows that leads from north-west are most likely to be interested.
+
+
+
+
+
+
+# Q8: A lead from which sector is most likely to be \A1\B0interested\A1\B1 in the product?
+
+# A8: 
+
+leadsOrderBySector = leads_calls_inner[leads_calls_inner['Call Outcome'] == 'INTERESTED'].groupby('Sector')['Sector'].count().sort_values(ascending = False)
+leadsOrderBySector
+
+'''
+consultancy      301
+retail           290
+food             261
+wholesale        233
+entertainment    135
+construction      46
+agriculture       30
+'''
+# The result shows that leads from the sector of consultancy are most likely to be interested.
+
+
+
+
+
+
+
+# Q9: Given a lead has already expressed interest and signed up, 
+# 	a. signups from which region are most likely to be approved?
+
+# A9a: we can clean the data signups_leads_calls by selecting only the deciding calls (the last call per lead to generate the Call Outcome as INTERESTED)
+
+signups_leads_calls_clean = signups_leads_calls[signups_leads_calls['Call Outcome'] == 'INTERESTED']
+signups_per_region = signups_leads_calls_clean.groupby('Region')['Region'].count().sort_index()
+approved_per_region = signups_leads_calls_clean[signups_leads_calls_clean['Approval Decision'] == 'APPROVED'].groupby('Region')['Region'].count().sort_index()
+(approved_per_region/signups_per_region).sort_values(ascending = False)
+
+'''
+north-west          0.452381
+scotland            0.451220
+south               0.375000
+south-east          0.337209
+midlands            0.285714
+northern-ireland    0.250000
+south-west          0.245098
+north-east          0.243902
+wales               0.147059
+london              0.080000
+'''
+
+# Again, the result shows that signups from north-west are most likely to be approved.
+
+#	b. Is this statistically significant? Why?  
+
+# A9b: we can run the same chi-square test
+
+test_data = pd.concat([approved_per_region, signups_per_region], axis = 1)
+chi2, p, dof, expected = stats.chi2_contingency(test_data)
+chi2, p
+# The result is (20.50334600413018, 0.015047849853946683). Given 5% significance level, the variation in approved rate is statistically significant across different regions.
+
+
+
+
+
+# Q10: Suppose you wanted to pick the 1000 leads most likely to sign up (who have not been called so far), based only on age, sector and region.
+#       a. What criteria would you use to pick those leads? 
+
+# A10a: We denote those leads who sign up as 1 and who didn't sign up as 0. Therefore, we focus on the precision score (the higher the better) to pick up leads. We can try differnt classifier in module sklearn to model it. Then given their predicted probability (I will show that the higher the predicted probability, the higher the precision score) or the predicted value (0 or 1) to select the top 1000 leads that are most likely to sign up.
+
+# However, in my exercise, I found that the direct modelling is not satisfactory (with low precision score). Instead, I tried a two-step modelling method. Firstly, I tried to fit between 'INTERESTED' (as 1) and 'NOT INTERESTED' (as 0) of the Call Outcome. (other call outcomes are not considered) Then, I only need to focus on fitting the 'INTERESTED' group because those who are not interested will not sign up from the observed data.
+
+# I split the called leads into training sample and test sample. Then I report the performance metrics using cross validation 
+
+# in the first step (fitting Call Outcome), in the training sample as 
+'''
+			precision	recall		f1_score
+logistic		0.651445	0.668260	0.659745
+tuned logistic		0.647215	0.699809	0.672485
+random forest		0.590020	0.576482	0.583172
+tuned random forest	0.627181	0.652964	0.639813
+GBM			0.627630	0.655832	0.641421
+KNN			0.612695	0.636711	0.624473
+'''
+# Interestingly, the fancier methods including random forest, Gradient Boosting Machine and K Nearest Neighbours (probabily because of incomplete tuning due to short of time) does not outform the basic logistic regression in terms of the precision score. 
+
+# in the test sample,
+
+'''
+			precision	recall	f1_score
+logistic		0.614035	0.700	0.654206
+tuned logistic		0.604651	0.728	0.660617
+random forest		0.571429	0.640	0.603774
+tuned random forest	0.574468	0.648	0.609023
+GBM			0.576271	0.680	0.623853
+KNN			0.581132	0.616	0.598058
+'''
+
+# the basic logistic regression still performs better than others.
+
+# Note that because we are eager to avoid misclassifying a 'NOT INTERESTED' as a 'INTERESTED' (because a 'NOT INTERESTED' can never sign up!), we need to raise the precision as much as possible.
+
+# The relationship between predicted probability and precision score in the training sample is 
+'''
+	proba criteria	precision
+0	0.50		0.660395
+1	0.53		0.682022
+2	0.56		0.694132
+3	0.59		0.698217
+4	0.62		0.717666
+5	0.65		0.729167
+6	0.68		0.735211
+7	0.71		0.751701
+8	0.74		0.756881
+9	0.77		0.782353
+10	0.80		0.784314
+''' 
+
+# in the test sample, it is
+'''
+	proba criteria 	precision
+0	0.50		0.614035
+1	0.53		0.647826
+2	0.56		0.673267
+3	0.59		0.687500
+4	0.62		0.673203
+5	0.65		0.709402
+6	0.68		0.755814
+7	0.71		0.746479
+8	0.74		0.785714
+9	0.77		0.808511
+10	0.80		0.794118
+'''
+
+# Therefore, we are confident to raise the precision to more than 0.7 by restricting the predicted probability to be larger than 0.68. When using this criteria to select the uncalled leads, we call these leads as X_out_sample_1st.
+
+# Then we fit the signups using the called leads who are 'interested'. And predict the signups using X_out_sample_1st. The second step modelling also has promising precision score (around 0.6). Since the calculation of these metrics is repetitive, I shall not report them here. Among the predicted signups (predicted value equals 1), we then select the top 1000 leads with highest predicted probability.
+
+
+
+
+#       b. In what sense are those an optimal criteria set? 
+
+# A10b: In each step, I adopted cross validation and training/test sample split to ensure the modelling performance is well eavaluated and no overfitting issues. I also tried to optimise precision score to supervise the selection of uncalled leads. As we can see from each step, the precision score is stable across traning sample cross validation and test sample evaluation. And the precision score is guaranteed to be higher than 0.7 by restricting the predicted probability mainly because we want to avoid missclassifying a 'NOT INTERESTED' as 'INTERESTED'. Through all these measure, these selected leads form an optimal criteria set. 
+
+
+
+
+
+#	c. How many signups would you expect to get based on those called leads, assuming they were being called by random agents? 
+
+# A10c: we can multiply the 1st step predicted probability by the 2nd step predicted probability and then sum up.
+
+# the result is 441.16541. So there are around 441 leads that will sign up.
+
+
+
+
+
+
+#	d. If you could choose the agents to make those calls, who would you choose? Why? 
+
+# A10d: By including the Agent as an additional variable, I found out that the one-step modelling by directly targetting signups seems to be fine. So I firstly ran a one-step modelling. 
+
+# however, the estimated signups for the training sample for each agent (by assuming that only each single agent call the whole called leads) are
+'''
+blue      2247.0
+red        839.0
+green      431.0
+orange       0.0
+black        0.0
+''' 
+
+# We have found some signups by Agent orange and black for called leads already, so this modelling method seems underestimate the signups.
+
+# It is therefore I tried again the two-step modelling method, and the results are
+'''
+blue      1846.0
+red       1399.0
+green     1267.0
+orange     419.0
+black       95.0
+'''
+# As can be seen here, the results are more in accordance with what we have observed from the previous called leads.
+
+# Finally, we run the 2-step modelling on the 1000 selected leads. The expected signups per agent is
+'''
+blue      704.531561
+red       600.753574
+green     538.084104
+orange    492.374353
+black     270.076941
+'''
+
+*Since Agent blue has the largest signups, I would choose Agent blue. Note that there are only limited number of signups by Agent blue is observed (52) in the previous leads, we need to monitor the performance of Agent blue along the process. A more conservative choice would be Agent red, and we have already observed a moderate number of signups by Agent red (316) in the previous called leads. Therefore if Agent blue performs worse than expected during the process, we may let Agent red to call instead.
