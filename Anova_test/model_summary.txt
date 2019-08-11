@@ -1,0 +1,84 @@
+$IA_DWELL_TIME
+             Df     Sum Sq    Mean Sq F value    Pr(>F)    
+film          2 1.2962e+11 6.4810e+10  81.782 < 2.2e-16 ***
+subType       4 2.7090e+10 6.7725e+09   8.546 3.502e-06 ***
+Residuals   136 1.0778e+11 7.9248e+08                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+$IA_FIXATION_COUNT
+             Df  Sum Sq Mean Sq F value    Pr(>F)    
+film          2 3317473 1658736  145.31 < 2.2e-16 ***
+subType       4  724606  181152   15.87 1.103e-10 ***
+Residuals   136 1552434   11415                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+$IA_DWELL_TIME_.
+             Df  Sum Sq Mean Sq F value    Pr(>F)    
+film          2 1.21171 0.60585  47.615 < 2.2e-16 ***
+subType       4 0.54259 0.13565  10.661  1.52e-07 ***
+Residuals   136 1.73046 0.01272                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+$IA_FIXATION_.
+             Df  Sum Sq Mean Sq F value    Pr(>F)    
+film          2 1.03383 0.51692  47.532 2.223e-16 ***
+subType       4 0.47869 0.11967  11.004 9.239e-08 ***
+Residuals   136 1.47903 0.01088                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+[[1]]
+Call:
+   aov(formula = eval(substitute(i ~ film + subType, list(i = as.name(x)))), 
+    data = final_df)
+
+Terms:
+                        film      subType    Residuals
+Sum of Squares  129620933938  27090015342 107777012530
+Deg. of Freedom            2            4          136
+
+Residual standard error: 28150.99
+Estimated effects may be unbalanced
+
+[[2]]
+Call:
+   aov(formula = eval(substitute(i ~ film + subType, list(i = as.name(x)))), 
+    data = final_df)
+
+Terms:
+                   film subType Residuals
+Sum of Squares  3317473  724606   1552434
+Deg. of Freedom       2       4       136
+
+Residual standard error: 106.8408
+Estimated effects may be unbalanced
+
+[[3]]
+Call:
+   aov(formula = eval(substitute(i ~ film + subType, list(i = as.name(x)))), 
+    data = final_df)
+
+Terms:
+                     film   subType Residuals
+Sum of Squares  1.2117064 0.5425911 1.7304581
+Deg. of Freedom         2         4       136
+
+Residual standard error: 0.1128005
+Estimated effects may be unbalanced
+
+[[4]]
+Call:
+   aov(formula = eval(substitute(i ~ film + subType, list(i = as.name(x)))), 
+    data = final_df)
+
+Terms:
+                     film   subType Residuals
+Sum of Squares  1.0338321 0.4786864 1.4790267
+Deg. of Freedom         2         4       136
+
+Residual standard error: 0.1042842
+Estimated effects may be unbalanced
+
