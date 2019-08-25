@@ -22,7 +22,7 @@ for (fileName in fileNames) {
     select(RECORDING_SESSION_LABEL, IA_DWELL_TIME, IA_FIXATION_COUNT, `IA_DWELL_TIME_.`, `IA_FIXATION_.`, IA_LABEL) %>%
     filter(IA_LABEL == 1) %>%
     select(-c(IA_LABEL)) %>%
-    mutate(film=filmname, subType=subtitle)
+    mutate(film=filmName, subType=subtitle)
   final_df <- rbind(final_df, df)
 }
 
